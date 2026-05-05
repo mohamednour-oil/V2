@@ -3851,5 +3851,24 @@ async function bootApp() {
 if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', bootApp);
 else bootApp();
 </script>
+// 🔥 إرسال الطلب إلى تيليجرام
+function sendOrderToTelegram(productName, price) {
+
+  fetch("https://nouroil.elsays0.workers.dev/", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "x-api-key": "secret123"
+    },
+    body: JSON.stringify({
+      name: "عميل من الموقع",
+      phone: "غير مسجل",
+      product: productName,
+      price: price
+    })
+  });
+
+}
+</script>
 </body>
 </html>
