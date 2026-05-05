@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
@@ -1120,7 +1121,7 @@ button,a{-webkit-tap-highlight-color:transparent}
       <div class="cart-summary-row total"><span>الإجمالي التقديري</span><span class="amt" id="sumTotal">0 ج.م</span></div>
     </div>
     <div class="cart-actions">
-      <button type="button" class="cart-wa-btn" id="cartWABtn">
+      <button type="button" class="cart-wa-btn" id="cartWABtn" onclick="checkoutOrder()">
         <svg viewBox="0 0 32 32" fill="currentColor" aria-hidden="true"><path d="M19.11 17.205c-.372 0-1.088 1.39-1.518 1.39a.63.63 0 0 1-.315-.1c-.802-.402-1.504-.817-2.163-1.447-.545-.516-1.146-1.29-1.46-1.963a.426.426 0 0 1-.073-.215c0-.33.99-.945.99-1.49 0-.143-.73-2.09-.832-2.335-.143-.372-.214-.487-.6-.487-.187 0-.36-.043-.53-.043-.302 0-.53.115-.746.315-.688.645-1.032 1.318-1.06 2.264v.114c-.015.99.472 1.977 1.017 2.78 1.23 1.82 2.506 3.41 4.554 4.34.616.287 2.035.888 2.722.888.817 0 2.15-.515 2.48-1.318.114-.257.157-.515.157-.787 0-.228-.057-.643-.242-.768-.57-.4-1.66-.79-2.435-.79zM16.46 4.92c-6.306 0-11.442 5.135-11.442 11.44 0 1.963.515 3.897 1.503 5.59l-1.504 5.373 5.53-1.476a11.39 11.39 0 0 0 5.92 1.63c6.306 0 11.42-5.135 11.42-11.44 0-6.306-5.114-11.44-11.42-11.44z"/></svg>
         <span>إرسال الطلب عبر واتساب</span>
       </button>
@@ -1333,8 +1334,8 @@ const CONFIG = {
   FACEBOOK_HANDLE: 'm.nour.1980',
   // ═══ TELEGRAM NOTIFICATIONS ═══
   // ⚠️ غيّر القيم دي بعد إنشاء البوت — تعليمات في README
-  TELEGRAM_BOT_TOKEN: '8157024231:AAGSKTskkl62YGs8y3oLOlnOmizjnF5v2A8',
-  TELEGRAM_CHAT_ID: '7420016672',
+  TELEGRAM_BOT_TOKEN: '8647759314:AAFqRjOLAnushYbAjmzGC6C0yMHUKuDZCq0',
+  TELEGRAM_CHAT_ID: '-5149031163',
   TELEGRAM_ENABLED: true,  // ✅ إشعارات تليجرام مُفعَّلة
   TRACK_ORDERS: true,
   ORDERS_STORAGE_KEY: 'mn_orders_log_v1',
@@ -3851,23 +3852,58 @@ async function bootApp() {
 if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', bootApp);
 else bootApp();
 </script>
-// 🔥 إرسال الطلب إلى تيليجرام
-function sendOrderToTelegram(productName, price) {
-
-  fetch("https://nouroil.elsays0.workers.dev/", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      "x-api-key": "secret1979"
-    },
-    body: JSON.stringify({
-      name: "عميل من الموقع",
-      phone: "غير مسجل",
-      product: productName,
-      price: price
-    })
-  });
-
+<script>
+function generateOrderId() {
+  return "ORD-" + Date.now().toString().slice(-6);
+}
+function showTGStatus(msg, type) {
+  console.log(type + ": " + msg);
+}
+function showOrderConfirm(id) {
+  alert("تم إرسال الطلب ✅ رقم الطلب: " + id);
+}
+async function sendOrderToTelegram(cart, total) {
+  const orderId = generateOrderId();
+  const items = cart.map(item =>
+    `• ${item.name} × ${item.qty} = ${item.price * item.qty} جنيه`
+  ).join("\n");
+  const name = localStorage.getItem("customer_name") || "عميل";
+  const phone = localStorage.getItem("customer_phone") || "غير متوفر";
+  showTGStatus("جاري إرسال الطلب...", "loading");
+  try {
+    await fetch("https://nouroil.elsays0.workers.dev/", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "x-api-key": "secret1979"
+      },
+      body: JSON.stringify({
+        name,
+        phone,
+        product: items,
+        price: total + " جنيه",
+        order_id: orderId
+      })
+    });
+    showTGStatus("تم الإرسال", "success");
+    showOrderConfirm(orderId);
+  } catch (e) {
+    showTGStatus("فشل", "error");
+  }
+}
+function checkoutOrder() {
+  const raw = JSON.parse(localStorage.getItem("mn_oils_cart_v1")) || [];
+  if (!raw.length) { alert("السلة فارغة"); return; }
+  let cart = [];
+  if (typeof CartModule !== "undefined" && typeof CartModule.getEnrichedItems === "function") {
+    cart = CartModule.getEnrichedItems();
+  } else {
+    cart = raw.map(it => ({ name: it.name || "منتج", price: it.price || 0, qty: it.qty || 1 }));
+  }
+  if (!cart.length) { alert("السلة فارغة"); return; }
+  const total = cart.reduce((sum, item) => sum + ((item.price || 0) * (item.qty || 1)), 0);
+  sendOrderToTelegram(cart, total);
+  setTimeout(() => { if (typeof openWhatsApp === "function") openWhatsApp(); }, 800);
 }
 </script>
 </body>
